@@ -7,7 +7,7 @@ const { Category, Product } = require('../../models');
 router.get('/', async (req, res) => {
   try {
     const categories = await Category.findAll({
-      include: Product,
+      include: {modle:Product}
     });
     res.status(200).json(categories);
   } catch (error) {
@@ -20,8 +20,8 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const categoryId = req.params.id;
-    const category = await Category.findByPk(categoryId, {
-      include: Product,
+    const category = await Category.findByPk(req.params.id,{
+      include: [{ model: Product }]
     });
     if (!category) {
       return res.status(404).json({ error: 'Category not found' });
@@ -46,27 +46,32 @@ router.post('/', async (req, res) => {
 
 // Update a category by id
 router.put('/:id', async (req, res) => {
-  try {
-    const categoryId = req.params.id;
-    const [updatedRowsCount] = await Category.update(req.body, {
-      where: { id: categoryId },
-    });
-    if (updatedRowsCount === 0) {
-      return res.status(404).json({ error: 'Category not found' });
-    }
-    res.status(200).json({ message: 'Category updated successfully' });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Internal Server Error' });
-  }
+	// update a category by its `id` value
+	try {
+        const categoryData = await Category.update(req.body, {
+            where: {
+                id: req.params.id,
+            },
+        });
+
+        if (!categoryData) {
+            res.status(404).json({ message: `No Category found by ID: ${req.params.id}.` });
+            return;
+        }
+
+        res.status(200).json(categoryData);
+    } catch (err) {
+        res.status(500).json(err);
+    };
 });
+
 
 // Delete a category by id
 router.delete('/:id', async (req, res) => {
   try {
     const categoryId = req.params.id;
     const deletedRowCount = await Category.destroy({
-      where: { id: categoryId },
+      where: {  id: req.params.id, },
     });
     if (deletedRowCount === 0) {
       return res.status(404).json({ error: 'Category not found' });
